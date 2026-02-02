@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { useMemo, Suspense, useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 
 const LEVELS = [
   "RED",
@@ -37,10 +37,25 @@ function ThanksContent() {
   );
 
   const progress = (index + 1) / 18;
-  const angleDeg = 180 - progress * 180;
-  const angleRad = (angleDeg * Math.PI) / 180;
-  const indicatorX = 100 + 80 * Math.cos(angleRad);
-  const indicatorY = 100 - 80 * Math.sin(angleRad);
+
+  const pathProgress = useMotionValue(0);
+  const cx = useTransform(pathProgress, (t) => {
+    const angleRad = ((180 - t * 180) * Math.PI) / 180;
+    return 100 + 80 * Math.cos(angleRad);
+  });
+  const cy = useTransform(pathProgress, (t) => {
+    const angleRad = ((180 - t * 180) * Math.PI) / 180;
+    return 100 - 80 * Math.sin(angleRad);
+  });
+
+  useEffect(() => {
+    const controls = animate(pathProgress, progress, {
+      duration: 1.8,
+      delay: 0.4,
+      ease: [0.22, 1, 0.36, 1],
+    });
+    return () => controls.stop();
+  }, [pathProgress, progress]);
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#070708] px-6">
@@ -50,7 +65,7 @@ function ThanksContent() {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.9 }}
         className="relative z-10 flex flex-col items-center gap-16"
       >
         <div className="text-center">
@@ -60,7 +75,7 @@ function ThanksContent() {
           <motion.h1
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
+            transition={{ delay: 0.4, duration: 0.8 }}
             className="text-4xl font-semibold tracking-tight text-white md:text-5xl"
           >
             {label}
@@ -102,9 +117,7 @@ function ThanksContent() {
               stroke="url(#meterGradient)"
               strokeWidth="12"
               strokeLinecap="round"
-              initial={{ pathLength: 0 }}
-              animate={{ pathLength: progress }}
-              transition={{ duration: 1, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              pathLength={pathProgress}
               style={{
                 filter: "drop-shadow(0 0 8px rgba(168,85,247,0.5))",
               }}
@@ -112,13 +125,11 @@ function ThanksContent() {
             <motion.circle
               r={6}
               fill="white"
-              initial={{ cx: 20, cy: 100, opacity: 0 }}
-              animate={{ cx: indicatorX, cy: indicatorY, opacity: 1 }}
-              transition={{
-                cx: { duration: 0.9, delay: 0.5, ease: [0.22, 1, 0.36, 1] },
-                cy: { duration: 0.9, delay: 0.5, ease: [0.22, 1, 0.36, 1] },
-                opacity: { duration: 0.3, delay: 0.5 },
-              }}
+              cx={cx}
+              cy={cy}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
               style={{
                 filter: "drop-shadow(0 0 12px rgba(255,255,255,0.9)) drop-shadow(0 0 24px rgba(168,85,247,0.6))",
               }}
